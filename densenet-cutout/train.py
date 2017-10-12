@@ -18,6 +18,7 @@ from torch.utils.data import DataLoader
 import os
 import sys
 import math
+from random import randrange
 
 import shutil
 
@@ -103,11 +104,33 @@ def main():
     trainF.close()
     testF.close()
 
+def cutout(data):
+    size = 4
+    for rgb_mats in data:
+        for mat in rgb_mats:
+            # top-left corner of cutout
+            # can be past len(mat) - size, giving smaller than size * size cutout
+            cx, cy = randrange(0, len(mat)), randrange(0, len(mat[0]))
+            # if size is even, center leans right and down
+            for i in range(int(-size / 2), round(size / 2)):
+                if cx + i < 0:
+                    continue
+                if cx + i == len(mat):
+                    break
+                for j in range(int(-size / 2), round(size / 2)):
+                    if cy + j < 0:
+                        continue
+                    if cy + j == len(mat):
+                        break
+                    mat[cx + i][cy + j] = 0
+    return data
+
 def train(args, epoch, net, trainLoader, optimizer, trainF):
     net.train()
     nProcessed = 0
     nTrain = len(trainLoader.dataset)
     for batch_idx, (data, target) in enumerate(trainLoader):
+        data = cutout(data)
         if args.cuda:
             data, target = data.cuda(), target.cuda()
         data, target = Variable(data), Variable(target)

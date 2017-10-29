@@ -67,16 +67,16 @@ def main():
 
     kwargs = {'num_workers': 1, 'pin_memory': True} if args.cuda else {}
     trainLoader = DataLoader(
-        dset.CIFAR10(root='cifar', train=True, download=True,
+        dset.CIFAR100(root='cifar', train=True, download=True,
                      transform=trainTransform),
         batch_size=args.batchSz, shuffle=True, **kwargs)
     testLoader = DataLoader(
-        dset.CIFAR10(root='cifar', train=False, download=True,
+        dset.CIFAR100(root='cifar', train=False, download=True,
                      transform=testTransform),
         batch_size=args.batchSz, shuffle=False, **kwargs)
 
     net = densenet.DenseNet(growthRate=12, depth=100, reduction=0.5,
-                            bottleneck=True, nClasses=10)
+                            bottleneck=True, nClasses=100)
 
     print('  + Number of params: {}'.format(
         sum([p.data.nelement() for p in net.parameters()])))
@@ -105,7 +105,7 @@ def main():
     testF.close()
 
 def cutout(data):
-    size = 4
+    size = 8 
     for rgb_mats in data:
         for mat in rgb_mats:
             # top-left corner of cutout
@@ -139,8 +139,8 @@ def train(args, epoch, net, trainLoader, optimizer, trainF):
     nProcessed = 0
     nTrain = len(trainLoader.dataset)
     for batch_idx, (data, target) in enumerate(trainLoader):
-        data = cutout(data)
-        data = negative(data)
+        # data = cutout(data)
+        # data = negative(data)
         if args.cuda:
             data, target = data.cuda(), target.cuda()
         data, target = Variable(data), Variable(target)

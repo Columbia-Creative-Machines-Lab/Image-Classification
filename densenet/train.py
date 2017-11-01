@@ -98,14 +98,14 @@ def main():
     for batch_idx, (data, target) in tqdm(enumerate(trainLoader), total=782):
         data = cutout(data)
         data = negative(data)
- 
+    ''' 
     for epoch in range(1, args.nEpochs + 1):
         adjust_opt(args.opt, optimizer, epoch)
         train(args, epoch, net, trainLoader, optimizer, trainF)
         test(args, epoch, net, testLoader, optimizer, testF)
         torch.save(net, os.path.join(args.save, 'latest.pth'))
         os.system('./plot.py {} &'.format(args.save))
-
+    '''
     trainF.close()
     testF.close()
 

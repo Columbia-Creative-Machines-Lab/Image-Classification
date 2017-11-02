@@ -27,6 +27,7 @@ import setproctitle
 
 import densenet
 import make_graph
+import quadrants
 
 def main():
     parser = argparse.ArgumentParser()
@@ -37,6 +38,7 @@ def main():
     parser.add_argument('--seed', type=int, default=1)
     parser.add_argument('--opt', type=str, default='sgd',
                         choices=('sgd', 'adam', 'rmsprop'))
+    parser.add_argument('--augment', type=str, default='')
     args = parser.parse_args()
 
     args.cuda = not args.no_cuda and torch.cuda.is_available()
@@ -95,17 +97,30 @@ def main():
     trainF = open(os.path.join(args.save, 'train.csv'), 'w')
     testF = open(os.path.join(args.save, 'test.csv'), 'w')
 
+    augmentation_method = args.augment
     for batch_idx, (data, target) in tqdm(enumerate(trainLoader), total=782):
-        data = cutout(data)
-        data = negative(data)
-    ''' 
+        if 'quadrant' in augmentation_method:
+            trainTransform = transforms.Compose([
+                transforms.RandomCrop(8, padding=4),
+                transforms.RandomHorizontalFlip(),
+                transforms.ToTensor(),
+                normTransform
+            ])
+            data = quadrants.quadrant(data) 
+        if 'cutout' in augmentation_method:
+            data = cutout(data)
+        if 'negative' in augmentation_method:
+            data = negative(data)
+     
     for epoch in range(1, args.nEpochs + 1):
+        '''
         adjust_opt(args.opt, optimizer, epoch)
         train(args, epoch, net, trainLoader, optimizer, trainF)
         test(args, epoch, net, testLoader, optimizer, testF)
         torch.save(net, os.path.join(args.save, 'latest.pth'))
         os.system('./plot.py {} &'.format(args.save))
-    '''
+        '''
+    
     trainF.close()
     testF.close()
 

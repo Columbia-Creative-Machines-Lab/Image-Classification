@@ -144,7 +144,7 @@ def train(args, epoch, net, trainLoader, optimizer, trainF):
     nProcessed = 0
     nTrain = len(trainLoader.dataset)
     for batch_idx, (data, target) in enumerate(trainLoader):
-        # data = cutout(data)
+        data = cutout(data)
         # data = negative(data)
         if args.cuda:
             data, target = data.cuda(), target.cuda()

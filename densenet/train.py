@@ -95,9 +95,9 @@ def main():
     trainF = open(os.path.join(args.save, 'train.csv'), 'w')
     testF = open(os.path.join(args.save, 'test.csv'), 'w')
 
-    for batch_idx, (data, target) in tqdm(enumerate(trainLoader), total=782):
-        data = cutout(data)
-        data = negative(data)
+    # for batch_idx, (data, target) in tqdm(enumerate(trainLoader), total=782):
+        # data = cutout(data)
+        # data = negative(data)
  
     for epoch in range(1, args.nEpochs + 1):
         adjust_opt(args.opt, optimizer, epoch)

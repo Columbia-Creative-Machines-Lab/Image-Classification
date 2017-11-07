@@ -157,8 +157,8 @@ def train(args, epoch, net, trainLoader, optimizer, trainF):
     nProcessed = 0
     nTrain = len(trainLoader.dataset)
     for batch_idx, (data, target) in enumerate(trainLoader):
-        data = cutout(data)
-        # data = negative(data)
+        if 'online' in augmentation_method and 'cutout' in augmentation_method:
+            data = cutout(data)
         if args.cuda:
             data, target = data.cuda(), target.cuda()
         data, target = Variable(data), Variable(target)

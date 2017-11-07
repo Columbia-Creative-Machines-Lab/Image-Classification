@@ -3,3 +3,5 @@ venv/
 data/
 densenet-pytorch/
 densenet.pytorch/
+densenet/cifar/
+cifar/

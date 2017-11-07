@@ -1,4 +1,5 @@
 p3env/
+venv/
 data/
 densenet-pytorch/
 densenet.pytorch/

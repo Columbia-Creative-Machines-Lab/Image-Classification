@@ -27,7 +27,6 @@ import setproctitle
 
 import densenet
 import make_graph
-import quadrants
 
 def main():
     parser = argparse.ArgumentParser()
@@ -111,7 +110,7 @@ def main():
             if 'display' in augmentation_method and not displayed:
                 displayed = True
                 tf = transforms.ToPILImage()
-                tf(image).save('1', 'JPEG')
+                tf(image).save('sample_img', 'JPEG')
    
     online_cutout = 'cutout' in augmentation_method
     for epoch in range(1, args.nEpochs + 1):

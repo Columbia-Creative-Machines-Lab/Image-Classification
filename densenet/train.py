@@ -112,10 +112,11 @@ def main():
                 displayed = True
                 tf = transforms.ToPILImage()
                 tf(image).save('1', 'JPEG')
-    
+   
+    online_cutout = 'cutout' in augmentation_method
     for epoch in range(1, args.nEpochs + 1):
         adjust_opt(args.opt, optimizer, epoch)
-        train(args, epoch, net, trainLoader, optimizer, trainF)
+        train(args, epoch, net, trainLoader, optimizer, trainF, online_cutout)
         test(args, epoch, net, testLoader, optimizer, testF)
         torch.save(net, os.path.join(args.save, 'latest.pth'))
         os.system('./plot.py {} &'.format(args.save))
@@ -159,12 +160,12 @@ def negative(data):
                 mat[i][j] = -mat[i][j]
     return data
 
-def train(args, epoch, net, trainLoader, optimizer, trainF):
+def train(args, epoch, net, trainLoader, optimizer, trainF, online_cutout=False):
     net.train()
     nProcessed = 0
     nTrain = len(trainLoader.dataset)
     for batch_idx, (data, target) in enumerate(trainLoader):
-        if 'online' in augmentation_method and 'cutout' in augmentation_method:
+        if online_cutout: 
             data = cutout(data)
         if args.cuda:
             data, target = data.cuda(), target.cuda()

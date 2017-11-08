@@ -3,8 +3,8 @@ Exploration of methods to beat CIFAR-100 state of the art (85%) without transfer
 
 ## TODO
 - [x] Run DenseNet on GCP instance/another GPU-supporting platform
-- [ ] Implement cutout
-- [ ] Implement negative image + cutout
+- [x] Implement cutout
+- [x] Implement negative image + cutout
 - [ ] Implement image segmentation into quadrants / separate CNN testing on each quadrant
 
 ## Installation Instructions

@@ -123,6 +123,17 @@ def main():
     trainF.close()
     testF.close()
 
+# converts a 3x32x32 Tensor to an RGB image file
+def untransform(data, mean, std):
+    filename = 'sample_image.jpeg' 
+    for d, m, s in zip(data, mean, std):
+        d = d*std
+        d = d+mean
+    tf = transforms.Compose([
+        transforms.ToPILImage()
+    ])
+    tf(image).save(filename)
+
 # converts a 32x32 input image to an 8x8 quadrant
 def quadrant(data):
     for mat in data:

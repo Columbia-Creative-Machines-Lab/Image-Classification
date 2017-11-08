@@ -38,6 +38,7 @@ def main():
     parser.add_argument('--opt', type=str, default='sgd',
                         choices=('sgd', 'adam', 'rmsprop'))
     parser.add_argument('--augment', type=str, default='')
+    parser.add_argument('--display')
     args = parser.parse_args()
 
     args.cuda = not args.no_cuda and torch.cuda.is_available()
@@ -56,26 +57,57 @@ def main():
     normStd = [0.24703233, 0.24348505, 0.26158768]
     normTransform = transforms.Normalize(normMean, normStd)
 
-    trainTransform = transforms.Compose([
+    # Data augmentation/regularization methods are specified in the command line, e.g.
+    #
+    # $ python train.py --augment=cutout
+    # $ python train.py --augment=cutout,negative,quadrant
+    #
+    # Online transformations are taken care of in the training loop.
+    # TODO: make cutout and negative nice to the lambda functions below.
+    # TODO: where to display the data?
+    tf_list = [
         transforms.RandomCrop(32, padding=4),
         transforms.RandomHorizontalFlip(),
-        transforms.ToTensor(),
-        normTransform
-    ])
+        transforms.ToTensor()
+    ]
+    if 'cutout' in args.augment:
+        tf_list.append(transforms.Lambda(
+                lambda img: cutout(img)
+            ))
+    if 'negative' in args.augment:
+        tf_list.append(transforms.Lambda(
+                lambda img: negative(img)
+            ))
+    tf_list.append(normTransform)
+    trainTransform = transforms.Compose(tf_list) # Note that normTransform still needs to be added after.
+
+    # Build transformation for test data.
     testTransform = transforms.Compose([
         transforms.ToTensor(),
         normTransform
     ])
 
+    # Load data into training and testing batches.
     kwargs = {'num_workers': 1, 'pin_memory': True} if args.cuda else {}
-    trainLoader = DataLoader(
-        dset.CIFAR100(root='cifar', train=True, download=True,
-                     transform=trainTransform),
-        batch_size=args.batchSz, shuffle=True, **kwargs)
-    testLoader = DataLoader(
-        dset.CIFAR100(root='cifar', train=False, download=True,
-                     transform=testTransform),
-        batch_size=args.batchSz, shuffle=False, **kwargs)
+    if args.display:
+        trainLoader = DataLoader(
+            dset.CIFAR100(root='cifar', train=True, download=True, transform=trainTransform),
+            batch_size=args.batchSz, shuffle=True, **kwargs)
+        for (batch, target) in trainLoader:
+            batch[0].save('sample_image.jpeg')  # save sample image
+    else:
+        trainTransform = transforms.Compose([
+                trainTransform,
+                normTransform
+            ])
+        trainLoader = DataLoader(
+            dset.CIFAR100(root='cifar', train=True, download=True,
+                        transform=trainTransform),
+            batch_size=args.batchSz, shuffle=True, **kwargs)
+        testLoader = DataLoader(
+            dset.CIFAR100(root='cifar', train=False, download=True,
+                        transform=testTransform),
+            batch_size=args.batchSz, shuffle=False, **kwargs)
 
     net = densenet.DenseNet(growthRate=12, depth=100, reduction=0.5,
                             bottleneck=True, nClasses=100)
@@ -84,7 +116,6 @@ def main():
         sum([p.data.nelement() for p in net.parameters()])))
     if args.cuda:
         net = net.cuda()
-
     if args.opt == 'sgd':
         optimizer = optim.SGD(net.parameters(), lr=1e-1,
                             momentum=0.9, weight_decay=1e-4)
@@ -96,6 +127,7 @@ def main():
     trainF = open(os.path.join(args.save, 'train.csv'), 'w')
     testF = open(os.path.join(args.save, 'test.csv'), 'w')
 
+'''
     # Preprocess and augment data
     augmentation_method = args.augment
     displayed = False
@@ -110,8 +142,9 @@ def main():
             if 'display' in augmentation_method and not displayed:
                 displayed = True
                 untransform(image, normMean, normStd)
-   
     online_cutout = 'cutout' in augmentation_method
+'''
+
     for epoch in range(1, args.nEpochs + 1):
         adjust_opt(args.opt, optimizer, epoch)
         train(args, epoch, net, trainLoader, optimizer, trainF, online_cutout)

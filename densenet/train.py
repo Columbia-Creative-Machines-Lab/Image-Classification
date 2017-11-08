@@ -97,21 +97,22 @@ def main():
     trainF = open(os.path.join(args.save, 'train.csv'), 'w')
     testF = open(os.path.join(args.save, 'test.csv'), 'w')
 
+    # Preprocess and augment data
     augmentation_method = args.augment
-    for batch_idx, (data, target) in tqdm(enumerate(trainLoader), total=782):
-        if 'quadrant' in augmentation_method:
-            trainTransform = transforms.Compose([
-                transforms.RandomCrop(8, padding=4),
-                transforms.RandomHorizontalFlip(),
-                transforms.ToTensor(),
-                normTransform
-            ])
-            data = quadrants.quadrant(data) 
-        if 'cutout' in augmentation_method:
-            data = cutout(data)
-        if 'negative' in augmentation_method:
-            data = negative(data)
-     
+    displayed = False
+    for batch_idx, (batch, target) in tqdm(enumerate(trainLoader), total=782):
+        for image in batch:
+            if 'quadrant' in augmentation_method:
+                image = quadrant(image)
+            if 'cutout' in augmentation_method:
+                image = cutout(image)
+            if 'negative' in augmentation_method:
+                image = negative(image)
+            if 'display' in augmentation_method and not displayed:
+                displayed = True
+                tf = transforms.ToPILImage()
+                tf(image).save('1', 'JPEG')
+    
     for epoch in range(1, args.nEpochs + 1):
         adjust_opt(args.opt, optimizer, epoch)
         train(args, epoch, net, trainLoader, optimizer, trainF)
@@ -122,34 +123,40 @@ def main():
     trainF.close()
     testF.close()
 
+# converts a 32x32 input image to an 8x8 quadrant
+def quadrant(data):
+    for mat in data:
+        dim = 8
+        quadrant = dim * np.random.randint(4)
+        mat = mat[:, [quadrant, quadrant+dim-1]]
+    return data
+
 def cutout(data):
     size = 8 
-    for rgb_mats in data:
-        for mat in rgb_mats:
-            # top-left corner of cutout
-            # can be past len(mat) - size, giving smaller than size * size cutout
-            cx, cy = randrange(0, len(mat)), randrange(0, len(mat[0]))
-            # if size is even, center leans right and down
-            for i in range(int(-size / 2), round(size / 2)):
-                if cx + i < 0:
+    for mat in data:
+        # top-left corner of cutout
+        # can be past len(mat) - size, giving smaller than size * size cutout
+        cx, cy = randrange(0, len(mat)), randrange(0, len(mat[0]))
+        # if size is even, center leans right and down
+        for i in range(int(-size / 2), round(size / 2)):
+            if cx + i < 0:
+                continue
+            if cx + i == len(mat):
+                break
+            for j in range(int(-size / 2), round(size / 2)):
+                if cy + j < 0:
                     continue
-                if cx + i == len(mat):
+                if cy + j == len(mat):
                     break
-                for j in range(int(-size / 2), round(size / 2)):
-                    if cy + j < 0:
-                        continue
-                    if cy + j == len(mat):
-                        break
-                    mat[cx + i][cy + j] = 0
+                mat[cx + i][cy + j] = 0
     return data
 
 # color ranges from ~-2 to 2, so flipping sign
 def negative(data):
-    for rgb_mats in data:
-        for mat in rgb_mats:
-            for i in range(len(mat)):
-                for j in range(len(mat[i])):
-                    mat[i][j] = -mat[i][j]
+    for mat in data:
+        for i in range(len(mat)):
+            for j in range(len(mat[i])):
+                mat[i][j] = -mat[i][j]
     return data
 
 def train(args, epoch, net, trainLoader, optimizer, trainF):

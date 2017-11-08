@@ -127,24 +127,7 @@ def main():
     trainF = open(os.path.join(args.save, 'train.csv'), 'w')
     testF = open(os.path.join(args.save, 'test.csv'), 'w')
 
-'''
     # Preprocess and augment data
-    augmentation_method = args.augment
-    displayed = False
-    for batch_idx, (batch, target) in tqdm(enumerate(trainLoader), total=782):
-        for image in batch:
-            if 'quadrant' in augmentation_method:
-                image = quadrant(image)
-            if 'cutout' in augmentation_method:
-                image = cutout(image)
-            if 'negative' in augmentation_method:
-                image = negative(image)
-            if 'display' in augmentation_method and not displayed:
-                displayed = True
-                untransform(image, normMean, normStd)
-    online_cutout = 'cutout' in augmentation_method
-'''
-
     for epoch in range(1, args.nEpochs + 1):
         adjust_opt(args.opt, optimizer, epoch)
         train(args, epoch, net, trainLoader, optimizer, trainF, online_cutout)
@@ -175,7 +158,7 @@ def quadrant(data):
     return data
 
 def cutout(data):
-    size = 8 
+    size = 8
     for mat in data:
         # top-left corner of cutout
         # can be past len(mat) - size, giving smaller than size * size cutout

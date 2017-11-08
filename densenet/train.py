@@ -109,8 +109,7 @@ def main():
                 image = negative(image)
             if 'display' in augmentation_method and not displayed:
                 displayed = True
-                tf = transforms.ToPILImage()
-                tf(image).save('sample_img', 'JPEG')
+                untransform(image, normMean, normStd)
    
     online_cutout = 'cutout' in augmentation_method
     for epoch in range(1, args.nEpochs + 1):
@@ -126,13 +125,13 @@ def main():
 # converts a 3x32x32 Tensor to an RGB image file
 def untransform(data, mean, std):
     filename = 'sample_image.jpeg' 
-    for d, m, s in zip(data, mean, std):
-        d = d*std
-        d = d+mean
+    data = [d*s + m for d, m, s in zip(data, mean, std)]
+    print(data)
+    data = torch.FloatTensor(data)
     tf = transforms.Compose([
         transforms.ToPILImage()
     ])
-    tf(image).save(filename)
+    tf(data).save(filename)
 
 # converts a 32x32 input image to an 8x8 quadrant
 def quadrant(data):

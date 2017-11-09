@@ -148,17 +148,6 @@ def main():
     trainF.close()
     testF.close()
 
-# converts a 3x32x32 Tensor to an RGB image file
-def untransform(data, mean, std):
-    filename = 'sample_image.jpeg' 
-    data = [d*s + m for d, m, s in zip(data, mean, std)]
-    print(data)
-    data = torch.FloatTensor(data)
-    tf = transforms.Compose([
-        transforms.ToPILImage()
-    ])
-    tf(data).save(filename)
-
 # converts a 32x32 input image to an 8x8 quadrant
 def quadrant(data):
     for mat in data:
@@ -169,30 +158,20 @@ def quadrant(data):
 
 def cutout(data):
     size = 8
+    
+    # top-left corner of cutout
+    dim = data[0].size(1)
+    cx, cy = randrange(0, dim-size), randrange(0, dim-size)
     for mat in data:
-        # top-left corner of cutout
-        # can be past len(mat) - size, giving smaller than size * size cutout
-        cx, cy = randrange(0, len(mat)), randrange(0, len(mat[0]))
-        # if size is even, center leans right and down
-        for i in range(int(-size / 2), round(size / 2)):
-            if cx + i < 0:
-                continue
-            if cx + i == len(mat):
-                break
-            for j in range(int(-size / 2), round(size / 2)):
-                if cy + j < 0:
-                    continue
-                if cy + j == len(mat):
-                    break
-                mat[cx + i][cy + j] = 0
+        mat[cx:cx+size, cy:cy+size] = 0.0
     return data
 
 # color ranges from ~-2 to 2, so flipping sign
 def negative(data):
-    for mat in data:
-        for i in range(len(mat)):
-            for j in range(len(mat[i])):
-                mat[i][j] = -mat[i][j]
+    data = 1.0 - data
+        #for i in range(len(mat)):
+        #    for j in range(len(mat[i])):
+        #        mat[i][j] = -mat[i][j]
     return data
 
 def train(args, epoch, net, trainLoader, optimizer, trainF):

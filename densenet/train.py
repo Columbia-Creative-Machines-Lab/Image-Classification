@@ -82,7 +82,6 @@ def main():
         tf_list.append(transforms.Lambda(
                 lambda img: negative(img)
             ))
-    tf_list.append(normTransform)
     trainTransform = transforms.Compose(tf_list) # Note that normTransform still needs to be added after.
 
     # Load data into training and testing batches.
@@ -92,7 +91,8 @@ def main():
             dset.CIFAR100(root='cifar', train=True, download=True, transform=trainTransform),
             batch_size=args.batchSz, shuffle=True, **kwargs)
         for (batch, target) in trainLoader:
-            batch[0].save('sample_image.jpeg')  # save sample image
+            tf = transforms.ToPILImage() 
+            tf(batch[0]).save('sample_image.jpeg')  # save sample image
     
     # Prepare to feed data into the network, applying normalizing transform now.
     trainTransform = transforms.Compose([

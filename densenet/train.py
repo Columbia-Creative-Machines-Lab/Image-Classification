@@ -53,6 +53,12 @@ def main():
         shutil.rmtree(args.save)
     os.makedirs(args.save, exist_ok=True)
 
+########################################################################################
+#
+#   DATA MUNGING
+#
+########################################################################################
+
     normMean = [0.49139968, 0.48215827, 0.44653124]
     normStd = [0.24703233, 0.24348505, 0.26158768]
     normTransform = transforms.Normalize(normMean, normStd)
@@ -63,8 +69,6 @@ def main():
     # $ python train.py --augment=cutout,negative,quadrant
     #
     # Online transformations are taken care of in the training loop.
-    # TODO: make cutout and negative nice to the lambda functions below.
-    # TODO: where to display the data?
     tf_list = [
         transforms.RandomCrop(32, padding=4),
         transforms.RandomHorizontalFlip(),
@@ -81,12 +85,6 @@ def main():
     tf_list.append(normTransform)
     trainTransform = transforms.Compose(tf_list) # Note that normTransform still needs to be added after.
 
-    # Build transformation for test data.
-    testTransform = transforms.Compose([
-        transforms.ToTensor(),
-        normTransform
-    ])
-
     # Load data into training and testing batches.
     kwargs = {'num_workers': 1, 'pin_memory': True} if args.cuda else {}
     if args.display:
@@ -95,20 +93,32 @@ def main():
             batch_size=args.batchSz, shuffle=True, **kwargs)
         for (batch, target) in trainLoader:
             batch[0].save('sample_image.jpeg')  # save sample image
-    else:
-        trainTransform = transforms.Compose([
-                trainTransform,
-                normTransform
-            ])
-        trainLoader = DataLoader(
-            dset.CIFAR100(root='cifar', train=True, download=True,
-                        transform=trainTransform),
-            batch_size=args.batchSz, shuffle=True, **kwargs)
-        testLoader = DataLoader(
-            dset.CIFAR100(root='cifar', train=False, download=True,
-                        transform=testTransform),
-            batch_size=args.batchSz, shuffle=False, **kwargs)
+    
+    # Prepare to feed data into the network, applying normalizing transform now.
+    trainTransform = transforms.Compose([
+            trainTransform,
+            normTransform
+        ])
+    testTransform = transforms.Compose([
+        transforms.ToTensor(),
+        normTransform
+    ])
+    trainLoader = DataLoader(
+        dset.CIFAR100(root='cifar', train=True, download=True,
+                    transform=trainTransform),
+        batch_size=args.batchSz, shuffle=True, **kwargs)
+    testLoader = DataLoader(
+        dset.CIFAR100(root='cifar', train=False, download=True,
+                    transform=testTransform),
+        batch_size=args.batchSz, shuffle=False, **kwargs)
 
+########################################################################################
+#
+#   DENSENET
+#
+########################################################################################
+
+    # Create the DenseNet.
     net = densenet.DenseNet(growthRate=12, depth=100, reduction=0.5,
                             bottleneck=True, nClasses=100)
 
@@ -130,7 +140,7 @@ def main():
     # Preprocess and augment data
     for epoch in range(1, args.nEpochs + 1):
         adjust_opt(args.opt, optimizer, epoch)
-        train(args, epoch, net, trainLoader, optimizer, trainF, online_cutout)
+        train(args, epoch, net, trainLoader, optimizer, trainF)
         test(args, epoch, net, testLoader, optimizer, testF)
         torch.save(net, os.path.join(args.save, 'latest.pth'))
         os.system('./plot.py {} &'.format(args.save))
@@ -185,13 +195,11 @@ def negative(data):
                 mat[i][j] = -mat[i][j]
     return data
 
-def train(args, epoch, net, trainLoader, optimizer, trainF, online_cutout=False):
+def train(args, epoch, net, trainLoader, optimizer, trainF):
     net.train()
     nProcessed = 0
     nTrain = len(trainLoader.dataset)
     for batch_idx, (data, target) in enumerate(trainLoader):
-        if online_cutout: 
-            data = cutout(data)
         if args.cuda:
             data, target = data.cuda(), target.cuda()
         data, target = Variable(data), Variable(target)

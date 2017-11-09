@@ -82,6 +82,10 @@ def main():
         tf_list.append(transforms.Lambda(
                 lambda img: negative(img)
             ))
+    if 'random' in args.augment and 'negative' in args.augment:
+        tf_list.append(transforms.Lambda(
+                lambda img: negative(img) if randrange(2)==1 else img
+            ))
     trainTransform = transforms.Compose(tf_list) # Note that normTransform still needs to be added after.
 
     # Load data into training and testing batches.
@@ -100,9 +104,9 @@ def main():
             normTransform
         ])
     testTransform = transforms.Compose([
-        transforms.ToTensor(),
-        normTransform
-    ])
+            transforms.ToTensor(),
+            normTransform
+        ])
     trainLoader = DataLoader(
         dset.CIFAR100(root='cifar', train=True, download=True,
                     transform=trainTransform),
@@ -120,7 +124,7 @@ def main():
 
     # Create the DenseNet.
     net = densenet.DenseNet(growthRate=12, depth=100, reduction=0.5,
-                            bottleneck=True, nClasses=100)
+                        bottleneck=True, nClasses=100)
 
     print('  + Number of params: {}'.format(
         sum([p.data.nelement() for p in net.parameters()])))
@@ -148,16 +152,21 @@ def main():
     trainF.close()
     testF.close()
 
-# converts a 32x32 input image to an 8x8 quadrant
+# converts a 3x32x32 input image to a 4x3x32x32 matrix of images
 def quadrant(data):
-    for mat in data:
-        dim = 8
-        quadrant = dim * np.random.randint(4)
-        mat = mat[:, [quadrant, quadrant+dim-1]]
+    dim = data[0].size(1)
+    size = dim/2
+    data = torch.Tensor([
+            mat[0:size, 0:size],
+            mat[0:size, size:dim],
+            mat[size:dim, 0:size],
+            mat[size:dim, size:dim]
+        ])
     return data
 
 def cutout(data):
-    size = 8
+    dim = data[0].size(1)
+    size = dim/4
     
     # top-left corner of cutout
     dim = data[0].size(1)
@@ -166,12 +175,8 @@ def cutout(data):
         mat[cx:cx+size, cy:cy+size] = 0.0
     return data
 
-# color ranges from ~-2 to 2, so flipping sign
 def negative(data):
     data = 1.0 - data
-        #for i in range(len(mat)):
-        #    for j in range(len(mat[i])):
-        #        mat[i][j] = -mat[i][j]
     return data
 
 def train(args, epoch, net, trainLoader, optimizer, trainF):

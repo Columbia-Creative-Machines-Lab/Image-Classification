@@ -107,7 +107,8 @@ class DenseNet(nn.Module):
         return nn.Sequential(*layers)
 
     def forward(self, x):
-        total_out = torch.cuda.FloatTensor(64, 342).zero_()
+        total_out = Variable(torch.cuda.FloatTensor(64, 342).zero_())
+        first_q = False
         half_dim = 16
         for i in range(4):
             row = (i%2) * half_dim
@@ -117,7 +118,10 @@ class DenseNet(nn.Module):
             out = self.trans2(self.dense2(out))
             out = self.dense3(out)
             out = torch.squeeze(F.avg_pool2d(F.relu(self.bn1(out)), 4))
-            total_out = total_out + out.data # 64x100 Tensor; row=sample in batch, col=class
-        total_out = Variable(total_out)
+            if not first_q:
+                total_out = Variable(out.data)
+                first_q = True
+            else:
+                total_out.data = total_out.data + out.data
         total_out = F.log_softmax(self.fc(total_out)) 
         return total_out

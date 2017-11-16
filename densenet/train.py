@@ -26,6 +26,7 @@ import shutil
 import setproctitle
 
 import densenet
+import quadnet
 import make_graph
 
 def main():
@@ -119,7 +120,11 @@ def main():
 ########################################################################################
 
     # Create the DenseNet.
-    net = densenet.DenseNet(growthRate=12, depth=100, reduction=0.5,
+    if 'quadrant' in args.augment:
+        net = quadnet.DenseNet(growthRate=12, depth=100, reduction=0.5,
+                            bottleneck=True, nClasses=100)
+    else:
+        net = densenet.DenseNet(growthRate=12, depth=100, reduction=0.5,
                             bottleneck=True, nClasses=100)
 
     print('  + Number of params: {}'.format(
@@ -183,20 +188,20 @@ def train(args, epoch, net, trainLoader, optimizer, trainF):
             data, target = data.cuda(), target.cuda()
         data, target = Variable(data), Variable(target)
         optimizer.zero_grad()
-        output = net(data)
+        output = net(data) # run network; data = 64x3x32x32
         loss = F.nll_loss(output, target)
         # make_graph.save('/tmp/t.dot', loss.creator); assert(False)
         loss.backward()
         optimizer.step()
         nProcessed += len(data)
-        pred = output.data.max(1)[1] # get the index of the max log-probability
+        pred = output.data.max(1)[1] # get the index of the max log-probability - 64-dim
         incorrect = pred.ne(target.data).cpu().sum()
         err = 100.*incorrect/len(data)
         partialEpoch = epoch + batch_idx / len(trainLoader) - 1
         print('Train Epoch: {:.2f} [{}/{} ({:.0f}%)]\tLoss: {:.6f}\tError: {:.6f}'.format(
             partialEpoch, nProcessed, nTrain, 100. * batch_idx / len(trainLoader),
             loss.data[0], err))
-
+ 
         trainF.write('{},{},{}\n'.format(partialEpoch, loss.data[0], err))
         trainF.flush()
 

@@ -1,0 +1,51 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage{multicol}
+
+\begin{document}
+\title{CIFAR-100 Image Classification Benchmark Experimentation}
+\author{Neil Chen and Roop Pal \\ \\ Columbia University \\ Creative Machines Lab}
+\date{}
+\maketitle
+
+\begin{multicols*}{2}
+\begin{abstract}
+   abstract-text
+\end{abstract}
+
+\section{Introduction}
+	Image Classification is a well-studied problem and much work has been done into achieving very accurate results. There is still room for improvement, as with the CIFAR-100 dataset, for which the state-of-the-art performance is fairly poor. We seek to approach and improve upon existing accuracy benchmarks for convolutional neural networks on the CIFAR-100 image dataset \cite{Krizhevsky}. In particular, we intend to examine the current state-of-the-art, modify existing models, and build and train new models with the target of meeting or exceeding the current 85\% \cite{DeVries} accuracy benchmark achieved by DeVries and Taylor.    
+    
+	Despite operating on large datasets, neural networks are often prone to overfitting. Many regularization methods exist to prevent overfitting. Regularizing the input distribution of large, deep neural networks is one such possible technique.
+
+\section{Related Works}
+	Our work is largely based off of the cutout technique as shown by DeVries and Taylor \cite{DeVries}. Cutout is a regularization technique of arbitrarily selecting squares of the images to mask. This paper establishes the current state of the art. 
+    
+\section{Experimental Setup}
+	For experimentation we use the CIFAR-100 dataset and... 
+    The code base is based off of https://github.com/facebook/fb.resnet.torch
+    https://github.com/xgastaldi/shake-shake
+    https://github.com/bamos/densenet.pytorch
+
+\section{Results}
+	From slideshow
+
+\section{Discussion}
+
+\section{Conclusion}
+	
+\begin{thebibliography}{9}
+\bibitem{Krizhevsky}
+Krizhevsky, A., \& Hinton, G. 2009. 
+Learning multiple layers of features from tiny images.
+\textit{In https://www.cs.toronto.edu/~kriz/learning-features-2009-TR.pdf}
+ 
+\bibitem{DeVries} 
+DeVries, T., \& Taylor, G. W. 2017.
+Improved Regularization of Convolutional Neural Networks with Cutout.
+\textit{In arXiv preprint arXiv:1708.04552.}.
+\end{thebibliography}
+
+\end{multicols*}
+
+\end{document}
